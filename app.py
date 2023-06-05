@@ -1,14 +1,14 @@
 from flask import Flask, render_template, jsonify, request
 import requests
-from gpiozero import DistanceSensor
+from gpiozero import Device,  DistanceSensor
 import time
 from flask_cors import CORS
 import subprocess
+import os
 
-
-app = Flask(__name__)
-cors = CORS(app, resources={r"*": {"origins": "*"}})
-
+# PYTHONPATH 환경 변수 설정
+env = os.environ.copy()
+env["PYTHONPATH"] = "/usr/local/lib/python3.9/dist-packages"  # 실제 모듈 위치
 
 distance = 0.3 # 기본 값
 def ultrasonic(distance):
@@ -16,22 +16,10 @@ def ultrasonic(distance):
 	sonic.threshold_distance = distance
 
 	if(sonic.wait_for_in_range()):
-		subprocess.run(['python','./tokyo/publish_tokyo.py'], check=True)
-		return userIn(sonic)
-	else:
-		print("그외")
-		return userOut(sonic)
+		subprocess.run(['python','./tokyo/publish_tokyo.py'],env=env, check=True)
+		return True
+	else: return false
 
-def userIn(sonic):
-	print("in ", sonic.distance*100," cm")
-	return True
-def userOut(sonic):
-	print("out ", sonic.distance*100," cm")
-	return False
-
-app.route("/")
-def home():
-	return 'ok'
 
 @app.route("/move")
 def sonic():
@@ -55,9 +43,6 @@ def set_distance():
 	print(distance)
 	return str(distance)
 
-@app.route("/test")
-def test():
-	return "flask ok"
 
 if __name__=='__main__':
 	app.run(host='0.0.0.0')
